@@ -7,6 +7,7 @@ const { stationChoices, requestSettings } = require('./config');
 require('dotenv').config();
 
 const now = Date.now();
+let text = '';
 
 const getWaitTimes = (stationId, route) => {
   const collectedTimes = [];
@@ -51,16 +52,34 @@ const getWaitTimes = (stationId, route) => {
     .catch(e => console.log(e));
 };
 
-Promise.all(stationChoices.map(e => getWaitTimes(...e))).then(arr => {
-  let text = '';
-  arr.forEach(el => {
-    text += el[0].stationName + '\n';
-    el.slice(0, 5).reduce(
-      (acc, curr) => (text += curr.routeId + ' - ' + curr.arrivalTime + '\n'),
-      ''
-    );
-    text += '\n';
+Promise.all(stationChoices.map(e => getWaitTimes(...e)))
+  .then(arr => {
+    text += 'Subways\n';
+    arr.forEach(el => {
+      text += `${el[0].stationName}\n`;
+      el.slice(0, 5).reduce((acc, curr) => (text += `${curr.routeId} - ${curr.arrivalTime}\n`), '');
+      text += '\n';
+    });
+    // Citibike data
+    return axios.get('https://gbfs.citibikenyc.com/gbfs/en/station_status.json');
+  })
+  .then(res => {
+    const { stations } = res.data.data;
+    const bergenAndVanderbilt = stations.find(e => e.station_id === '3558');
+    const bergenAndFlatbush = stations.find(e => e.station_id === '3414');
+    if (bergenAndFlatbush && bergenAndVanderbilt) {
+      text += 'Citibikes\n';
+      text += `Bikes available at Bergen & Vanderbilt: ${
+        bergenAndVanderbilt.num_bikes_available
+      }\n`;
+      text += `Docks available at Bergen & Flatbush: ${bergenAndFlatbush.num_docks_available}\n`;
+      const oldestReportedTime = new Date(
+        Math.min(bergenAndVanderbilt.last_reported, bergenAndFlatbush.last_reported) * 1000
+      ).toLocaleTimeString('en-US', {
+        timeZone: 'America/New_York'
+      });
+      text += `Last updated at ${oldestReportedTime}`;
+    }
+    console.log(text);
+    sendEmail('Commute Info', text);
   });
-  console.log(text);
-  sendEmail('Upcoming Trains', text);
-});
