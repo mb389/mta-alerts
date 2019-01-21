@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "dotenv": "^6.2.0",
-    "gtfs-realtime-bindings": "^0.0.4"
+    "gtfs-realtime-bindings": "^0.0.4",
+    "node-mailjet": "^3.3.1"
   }
 }

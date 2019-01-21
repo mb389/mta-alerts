@@ -1,5 +1,7 @@
 const axios = require('axios');
 const GtfsRealtimeBindings = require('gtfs-realtime-bindings');
+const sendEmail = require('./emailSender');
+const stations = require('./stations');
 require('dotenv').config();
 
 const feedIds = {
@@ -31,7 +33,6 @@ const feedIds = {
 }
 
 const now = Date.now();
-const feedId = 26;
 
 const getWaitTimes = (stationId, route) => {
   const collectedTimes = [];
@@ -42,6 +43,11 @@ const getWaitTimes = (stationId, route) => {
     encoding: null,
     responseType: 'arraybuffer'
   };
+  let stationName;
+  const stationDetail = stations.find(e => e["GTFS Stop ID"] == stationId.slice(0, -1));
+  if (stationDetail) {
+    stationName = stationDetail["Stop Name"];
+  }
   return axios(requestSettings)
     .then((res) => {
       const feed = GtfsRealtimeBindings.FeedMessage.decode(res.data);
@@ -61,12 +67,22 @@ const getWaitTimes = (stationId, route) => {
         }
       });
       return collectedTimes
-        .map(({ routeId, time }) => ({ routeId, waitTime: Math.round((time - now/1000)/60) }))
-        .sort((a, b) => a.waitTime - b.waitTime);
+        .map(({ routeId, time }) => ({ stationName, routeId, waitTime: Math.ceil((time - now/1000)/60) }))
+        .sort((a, b) => a.waitTime - b.waitTime)
     })
     .catch((e) => console.log(e));
 }
 
-Promise.all([getWaitTimes('A44N', 'C'), getWaitTimes('236N', '2')])
-  .then(([a, b]) => console.log(a,b))
+const choices = [['A44N', 'C'], ['236N', '2']];
+
+Promise.all(choices.map(e => getWaitTimes(...e)))
+  .then((arr) => {
+    let text = '';
+    arr.forEach(el => {
+      text += el[0].stationName + '\n';
+      el.reduce((acc, curr) => text += curr.routeId + ' ' + curr.waitTime + ' mins \n', '');
+      text += '\n';
+    });
+    // sendEmail('Train Wait Times', text);
+  })
 
