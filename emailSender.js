@@ -1,30 +1,24 @@
-require("dotenv").config();
-const Mailjet = require("node-mailjet").connect(
+const { emailRecipients } = require('./config');
+
+require('dotenv').config();
+const Mailjet = require('node-mailjet').connect(
   process.env.MAILJET_PUBLIC,
   process.env.MAILJET_SECRET
 );
 
 module.exports = (subject, text) => {
-  Mailjet.post("send", { version: "v3.1" }).request({
-    Messages: [
-      {
-        From: {
-          Email: "mbushoy@gmail.com",
-          Name: "Me"
-        },
-        To: [
-          {
-          Email: "mbushoy@gmail.com",
-          Name: "Me"
+  Mailjet.post('send', { version: 'v3.1' })
+    .request({
+      Messages: [
+        {
+          From: {
+            Email: 'mbushoy@gmail.com'
           },
-          {
-            Email: "lisazhuy@gmail.com",
-          }
-        ],
-        Subject: subject,
-        TextPart: text,
-      }
-    ]
-  })
-  .then(() => console.log("Email sent!"));
+          To: emailRecipients.map(email => ({ Email: email })),
+          Subject: subject,
+          TextPart: text
+        }
+      ]
+    })
+    .then(() => console.log('Email sent!'));
 };
