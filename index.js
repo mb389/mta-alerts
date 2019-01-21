@@ -2,39 +2,57 @@ const axios = require('axios');
 const GtfsRealtimeBindings = require('gtfs-realtime-bindings');
 require('dotenv').config();
 
-// feed IDs
-// 1 = 1,2,3,4,5,6,S
-// 2 = L
-// 26 = A,C,E,H,S (Franklin Ave. Shuttle)
-// 16 = N,Q,R,W
-// 21 = B,D,F,M
-// 31 = G
-// 36 = J,Z
-// 51 = 7
+const feedIds = {
+  1: '1',
+  2: '1',
+  3: '1',
+  4: '1',
+  5: '1',
+  6: '1',
+  S: '1',
+  L: '2',
+  A: '26',
+  C: '26',
+  E: '26',
+  H: '26',
+  S: '26',
+  N: '16',
+  Q: '16',
+  R: '16',
+  W: '16',
+  B: '21',
+  D: '21',
+  F: '21',
+  M: '21',
+  G: '31',
+  J: '36',
+  Z: '36',
+  7: '51',
+}
+
 const now = Date.now();
-const feedId = 21;
-const url = `http://datamine.mta.info/mta_esi.php?key=${process.env.MTA_KEY}&feed_id=${feedId}`;
+const feedId = 26;
 
-var requestSettings = {
-  method: 'GET',
-  url,
-  encoding: null,
-  responseType: 'arraybuffer'
-};
-
-const getWaitTimes = (stationId) => {
+const getWaitTimes = (stationId, route) => {
   const collectedTimes = [];
+  const url = `http://datamine.mta.info/mta_esi.php?key=${process.env.MTA_KEY}&feed_id=${feedIds[route]}`;
+  var requestSettings = {
+    method: 'GET',
+    url,
+    encoding: null,
+    responseType: 'arraybuffer'
+  };
   return axios(requestSettings)
     .then((res) => {
       const feed = GtfsRealtimeBindings.FeedMessage.decode(res.data);
       feed.entity.forEach((train) => {
         if (train.trip_update) {
-          const routeId = train.trip_update.trip.route_id;
           const arrivalTimes = train.trip_update.stop_time_update;
           arrivalTimes.forEach((el) => {
             if (el.stop_id === stationId) {
-              timeData = el.arrival;
-              uniqueTime = timeData.time.low;
+              const routeId = train.trip_update.trip.route_id;
+              const timeData = el.arrival;
+              const uniqueTime = timeData.time.low;
               if (uniqueTime) {
                 collectedTimes.push({ routeId, time: uniqueTime });
               }
@@ -42,15 +60,13 @@ const getWaitTimes = (stationId) => {
           })
         }
       });
-      return collectedTimes;
+      return collectedTimes
+        .map(({ routeId, time }) => ({ routeId, waitTime: Math.round((time - now/1000)/60) }))
+        .sort((a, b) => a.waitTime - b.waitTime);
     })
     .catch((e) => console.log(e));
 }
 
-const waitTimes = getWaitTimes('D21S')
-  .then(times => {
-    times.map(({ routeId, time }) => ({ routeId, waitTime: Math.round((time - now/1000)/360) }));
-  });
+Promise.all([getWaitTimes('A44N', 'C'), getWaitTimes('236N', '2')])
+  .then(([a, b]) => console.log(a,b))
 
-
-  console.log(waitTimes)
