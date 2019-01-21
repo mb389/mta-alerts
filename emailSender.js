@@ -5,7 +5,6 @@ const Mailjet = require("node-mailjet").connect(
 );
 
 module.exports = (subject, text) => {
-  console.log(subject, text, typeof process.env.MAILJET_PUBLIC);
   Mailjet.post("send", { version: "v3.1" }).request({
     Messages: [
       {
@@ -23,5 +22,6 @@ module.exports = (subject, text) => {
         TextPart: text,
       }
     ]
-  });
+  })
+  .then(() => console.log("email sent!"));
 };

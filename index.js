@@ -83,6 +83,6 @@ Promise.all(choices.map(e => getWaitTimes(...e)))
       el.reduce((acc, curr) => text += curr.routeId + ' ' + curr.waitTime + ' mins \n', '');
       text += '\n';
     });
-    // sendEmail('Train Wait Times', text);
+    sendEmail('Train Wait Times', text);
   })
 
