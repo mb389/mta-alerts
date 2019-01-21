@@ -67,7 +67,7 @@ const getWaitTimes = (stationId, route) => {
         }
       });
       return collectedTimes
-        .map(({ routeId, time }) => ({ stationName, routeId, waitTime: Math.ceil((time - now/1000)/60) }))
+        .map(({ routeId, time }) => ({ stationName, routeId, arrivalTime: new Date(time * 1000).toLocaleTimeString('en-US'), waitTime: Math.ceil((time - now/1000)/60) }))
         .sort((a, b) => a.waitTime - b.waitTime)
     })
     .catch((e) => console.log(e));
@@ -80,9 +80,10 @@ Promise.all(choices.map(e => getWaitTimes(...e)))
     let text = '';
     arr.forEach(el => {
       text += el[0].stationName + '\n';
-      el.reduce((acc, curr) => text += curr.routeId + ' ' + curr.waitTime + ' mins \n', '');
+      el.reduce((acc, curr) => text += curr.routeId + ' - ' + curr.arrivalTime + '\n', '');
       text += '\n';
     });
-    sendEmail('Train Wait Times', text);
+    console.log(text);
+    sendEmail('Upcoming Trains', text);
   })
 

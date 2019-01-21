@@ -16,6 +16,9 @@ module.exports = (subject, text) => {
           {
           Email: "mbushoy@gmail.com",
           Name: "Me"
+          },
+          {
+            Email: "lisazhuy@gmail.com",
           }
         ],
         Subject: subject,
@@ -23,5 +26,5 @@ module.exports = (subject, text) => {
       }
     ]
   })
-  .then(() => console.log("email sent!"));
+  .then(() => console.log("Email sent!"));
 };
