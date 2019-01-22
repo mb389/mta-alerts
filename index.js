@@ -47,20 +47,25 @@ const getWaitTimes = (stationId, route) => {
           }),
           waitTime: Math.ceil((time - now / 1000) / 60)
         }))
+        .filter(e => e.waitTime >= 0)
         .sort((a, b) => a.waitTime - b.waitTime);
     })
     .catch(e => console.log(e));
 };
 
+// Fetch MTA data
 Promise.all(stationChoices.map(e => getWaitTimes(...e)))
   .then(arr => {
     text += 'Subways\n';
     arr.forEach(el => {
       text += `${el[0].stationName}\n`;
-      el.slice(0, 5).reduce((acc, curr) => (text += `${curr.routeId} - ${curr.arrivalTime}\n`), '');
+      el.slice(0, 5).reduce(
+        (acc, curr) => (text += `${curr.routeId} - ${curr.arrivalTime} ${curr.waitTime}\n`),
+        ''
+      );
       text += '\n';
     });
-    // Citibike data
+    // Fetch Citibike data
     return axios.get('https://gbfs.citibikenyc.com/gbfs/en/station_status.json');
   })
   .then(res => {
@@ -81,5 +86,6 @@ Promise.all(stationChoices.map(e => getWaitTimes(...e)))
       text += `Last updated at ${oldestReportedTime}`;
     }
     console.log(text);
+    // Generate email
     sendEmail('Commute Info', text);
   });
