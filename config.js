@@ -1,6 +1,23 @@
+// MTA
+// Feed & station data in /data
+// More info here: http://datamine.mta.info/list-of-feeds
+
+// Citibike
+// Station info: https://gbfs.citibikenyc.com/gbfs/en/station_information.json
 module.exports = {
-  stationChoices: [['A44N', 'C'], ['236N', '2']],
-  emailRecipients: ['mbushoy@gmail.com', 'lisazhuy@gmail.com'],
+  mta: {
+    stationChoices: [['D25N', 'Q'], ['D25N', 'B'], ['A44N', 'C']] // last letter indicates direction
+  },
+  citibike: {
+    departureStationIds: [
+      '3558' // Bergen & Vanderbilt
+    ],
+    arrivalStationIds: [
+      '3414', // Bergen & Flatbush
+      '3416' // 7 Ave & Park Pl
+    ]
+  },
+  emailRecipients: ['mbushoy@gmail.com'],
   requestSettings: {
     method: 'GET',
     encoding: null,

@@ -2,8 +2,13 @@ const axios = require('axios');
 const GtfsRealtimeBindings = require('gtfs-realtime-bindings');
 const sendEmail = require('./emailSender');
 const stations = require('./data/stations');
+const citibikeStations = require('./data/citibike_stations');
 const feedIds = require('./data/feeds');
-const { stationChoices, requestSettings } = require('./config');
+const {
+  mta: { stationChoices },
+  citibike: { departureStationIds, arrivalStationIds },
+  requestSettings
+} = require('./config');
 require('dotenv').config();
 
 const now = Date.now();
@@ -23,7 +28,7 @@ const getWaitTimes = (stationId, route) => {
   return axios(request)
     .then(res => {
       const feed = GtfsRealtimeBindings.FeedMessage.decode(res.data);
-      feed.entity.forEach(train => {
+      feed.entity.forEach((train, i) => {
         if (train.trip_update) {
           const arrivalTimes = train.trip_update.stop_time_update;
           arrivalTimes.forEach(el => {
@@ -58,6 +63,7 @@ Promise.all(stationChoices.map(e => getWaitTimes(...e)))
   .then(arr => {
     text += 'Subways\n';
     arr.forEach(el => {
+      if (!el[0]) return;
       text += `${el[0].stationName}\n`;
       el.slice(0, 5).reduce(
         (acc, curr) => (text += `${curr.routeId} - ${curr.arrivalTime} ${curr.waitTime}\n`),
@@ -70,17 +76,28 @@ Promise.all(stationChoices.map(e => getWaitTimes(...e)))
   })
   .then(res => {
     const { stations } = res.data.data;
-    const bergenAndVanderbilt = stations.find(e => e.station_id === '3558');
-    const bergenAndFlatbush = stations.find(e => e.station_id === '3414');
-    if (bergenAndFlatbush && bergenAndVanderbilt) {
+    const departureStations = stations.filter(e => departureStationIds.includes(e.station_id));
+    const arrivalStations = stations.filter(e => arrivalStationIds.includes(e.station_id));
+
+    if (departureStations && arrivalStations) {
+      let lastReported;
       text += 'Citibikes\n';
-      text += `Bikes available at Bergen & Vanderbilt: ${
-        bergenAndVanderbilt.num_bikes_available
-      }\n`;
-      text += `Docks available at Bergen & Flatbush: ${bergenAndFlatbush.num_docks_available}\n`;
-      const oldestReportedTime = new Date(
-        Math.min(bergenAndVanderbilt.last_reported, bergenAndFlatbush.last_reported) * 1000
-      ).toLocaleTimeString('en-US', {
+
+      const setLastReported = time => (!lastReported ? time : Math.min(time, lastReported));
+
+      departureStations.forEach(station => {
+        const stationName = citibikeStations[station.station_id];
+        text += `Bikes available at ${stationName}: ${station.num_bikes_available}\n`;
+        lastReported = setLastReported(station.last_reported);
+      });
+
+      arrivalStations.forEach(station => {
+        const stationName = citibikeStations[station.station_id];
+        text += `Docks available at ${stationName}: ${station.num_docks_available}\n`;
+        lastReported = setLastReported(station.last_reported);
+      });
+
+      const oldestReportedTime = new Date(lastReported * 1000).toLocaleTimeString('en-US', {
         timeZone: 'America/New_York'
       });
       text += `Last updated at ${oldestReportedTime}`;
