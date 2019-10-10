@@ -66,7 +66,7 @@ Promise.all(stationChoices.map(e => getWaitTimes(...e)))
       if (!el[0]) return;
       text += `${el[0].stationName}\n`;
       el.slice(0, 5).reduce(
-        (acc, curr) => (text += `${curr.routeId} - ${curr.arrivalTime} ${curr.waitTime}\n`),
+        (acc, curr) => (text += `${curr.routeId} - ${curr.arrivalTime} (${curr.waitTime} mins)\n`),
         ''
       );
       text += '\n';
