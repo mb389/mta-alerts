@@ -6,5 +6,5 @@ getMtaWaitTimes()
   .then(getCitibikeWaitTimes)
   .then(text => {
     console.log(text);
-    // sendEmail('Commute Info', text);
+    sendEmail('Commute Info', text);
   });
