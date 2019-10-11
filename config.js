@@ -17,7 +17,7 @@ module.exports = {
       '3416' // 7 Ave & Park Pl
     ]
   },
-  emailRecipients: ['mbushoy@gmail.com'],
+  emailRecipients: [process.env.OWNER_EMAIL],
   requestSettings: {
     method: 'GET',
     encoding: null,

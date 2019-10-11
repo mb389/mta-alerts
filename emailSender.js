@@ -12,7 +12,7 @@ module.exports = (subject, text) => {
       Messages: [
         {
           From: {
-            Email: 'mbushoy@gmail.com'
+            Email: process.env.OWNER_EMAIL
           },
           To: emailRecipients.map(email => ({ Email: email })),
           Subject: subject,
