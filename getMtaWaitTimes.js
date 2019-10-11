@@ -8,7 +8,9 @@ const {
 } = require('./config');
 require('dotenv').config();
 
-module.exports = (stationId, route) => {
+const now = Date.now();
+
+const fetchTimes = (stationId, route) => {
   const collectedTimes = [];
   var request = {
     ...requestSettings,
@@ -49,4 +51,36 @@ module.exports = (stationId, route) => {
         .sort((a, b) => a.waitTime - b.waitTime);
     })
     .catch(e => console.log(e));
+};
+
+module.exports = () => {
+  let text = '';
+  const errors = [];
+  if (!stationChoices || !stationChoices.length) {
+    return Promise.resolve(text);
+  }
+  return Promise.all(stationChoices.map(e => fetchTimes(...e))).then(arr => {
+    if (arr.length) {
+      text += 'Subways\n';
+      arr.forEach((e, i) => {
+        if (!e || !e[0]) {
+          errors.push(stationChoices[i]);
+        } else {
+          text += `${e[0].stationName}\n`;
+          e.slice(0, 5).reduce(
+            (acc, curr) =>
+              (text += `${curr.routeId} - ${curr.arrivalTime} (${curr.waitTime} mins)\n`),
+            ''
+          );
+        }
+        text += '\n';
+      });
+    }
+    if (errors.length) {
+      text += `\nThere were problems with the following inputs: ${errors
+        .map(e => `[${e}]`)
+        .join(', ')}\n\n`;
+    }
+    return text;
+  });
 };

@@ -1,17 +1,24 @@
 const axios = require('axios');
-const citibikeStations = require('./data/citibike_stations');
 const {
   citibike: { departureStationIds, arrivalStationIds }
 } = require('./config');
 
-const CITIBIKE_API_URL = 'https://gbfs.citibikenyc.com/gbfs/en/station_status.json';
+const CITIBIKE_STATION_STATUS_URL = 'https://gbfs.citibikenyc.com/gbfs/en/station_status.json';
+const CITIBIKE_STATION_INFO_URL = 'https://gbfs.citibikenyc.com/gbfs/en/station_information.json';
 
 module.exports = text => {
-  if (!departureStationIds.length && !arrivalStationIds.length) {
+  if (
+    !departureStationIds ||
+    !arrivalStationIds ||
+    !departureStationIds.length ||
+    !arrivalStationIds.length
+  ) {
     return Promise.resolve(text);
   }
-  return axios.get(CITIBIKE_API_URL).then(res => {
-    const { stations } = res.data.data;
+  const requests = [axios.get(CITIBIKE_STATION_INFO_URL), axios.get(CITIBIKE_STATION_STATUS_URL)];
+  return Promise.all(requests).then(([stationInfo, stationStatus]) => {
+    const info = stationInfo.data.data.stations;
+    const { stations } = stationStatus.data.data;
     const departureStations = stations.filter(e => departureStationIds.includes(e.station_id));
     const arrivalStations = stations.filter(e => arrivalStationIds.includes(e.station_id));
 
@@ -21,14 +28,16 @@ module.exports = text => {
     const setLastReported = time => (!lastReported ? time : Math.min(time, lastReported));
 
     departureStations.forEach(station => {
-      const stationName = citibikeStations[station.station_id];
-      text += `Bikes available at ${stationName}: ${station.num_bikes_available}\n`;
+      const singleStation = info.find(e => e.station_id === station.station_id);
+      if (!singleStation) return;
+      text += `Bikes available at ${singleStation.name}: ${station.num_bikes_available}\n`;
       lastReported = setLastReported(station.last_reported);
     });
 
     arrivalStations.forEach(station => {
-      const stationName = citibikeStations[station.station_id];
-      text += `Docks available at ${stationName}: ${station.num_docks_available}\n`;
+      const singleStation = info.find(e => e.station_id === station.station_id);
+      if (!singleStation) return;
+      text += `Docks available at ${singleStation.name}: ${station.num_docks_available}\n`;
       lastReported = setLastReported(station.last_reported);
     });
 
