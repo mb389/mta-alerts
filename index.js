@@ -27,7 +27,8 @@ Promise.all(stationChoices.map(e => getMtaWaitTimes(...e)))
           text += '\n';
         });
     }
-    return getCitibikeWaitTimes(text);
+    // return getCitibikeWaitTimes(text);
+    return text;
   })
   .then(text => {
     console.log(text);
