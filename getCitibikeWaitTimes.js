@@ -29,14 +29,12 @@ module.exports = text => {
 
     departureStations.forEach(station => {
       const singleStation = info.find(e => e.station_id === station.station_id);
-      if (!singleStation) return;
       text += `Bikes available at ${singleStation.name}: ${station.num_bikes_available}\n`;
       lastReported = setLastReported(station.last_reported);
     });
 
     arrivalStations.forEach(station => {
       const singleStation = info.find(e => e.station_id === station.station_id);
-      if (!singleStation) return;
       text += `Docks available at ${singleStation.name}: ${station.num_docks_available}\n`;
       lastReported = setLastReported(station.last_reported);
     });
@@ -45,7 +43,6 @@ module.exports = text => {
       timeZone: 'America/New_York'
     });
     text += `Last updated at ${oldestReportedTime}`;
-
     return text;
   });
 };
